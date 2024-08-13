@@ -4,27 +4,78 @@ import {Temporal} from "@js-temporal/polyfill";
 import {dateUtils} from "./date-utils.ts";
 import {DayData} from "./types.ts";
 
+class DB {
+    constructor() {
+        this.db = new SQLocal('database.sqlite3')
+    }
 
-export const db = new SQLocal('database.sqlite3')
+    db: SQLocal
 
-await db.sql`
-CREATE TABLE IF NOT EXISTS diaries (
-    uuid TEXT PRIMARY KEY NOT NULL,
-    text TEXT NOT NULL,
-    date DATE NOT NULL UNIQUE,
-    word_count INTEGER NOT NULL DEFAULT 0
-)
-`
+    async init() {
+        await this.db.sql`
+            CREATE TABLE IF NOT EXISTS diaries (
+                uuid TEXT PRIMARY KEY NOT NULL,
+                text TEXT NOT NULL,
+                date DATE NOT NULL UNIQUE,
+                word_count INTEGER NOT NULL DEFAULT 0
+            )
+        `
+        await this.db.sql`
+            INSERT INTO diaries (uuid, text, date, word_count) VALUES (
+                ${crypto.randomUUID()},
+                ${""},
+                ${dateUtils.getTodayString()},
+                ${0}
+            )
+            ON CONFLICT(date) DO NOTHING;
+        `
+    }
+    async today() {
+        return await this.db.sql`SELECT * FROM diaries WHERE date = ${dateUtils.getTodayString()}`
+    }
+    async timeline(yyyymm: Temporal.PlainYearMonth) {
+        const timeline: DayData[] = []
+        const isCurrentMonth: boolean = dateUtils.nowInCurrentMonth(yyyymm)
+        const todayDayNumber: number = Temporal.Now.plainDateISO().day - 1
+        const timelineData = await this.db.sql`SELECT date, word_count FROM diaries WHERE date >= ${dateUtils.getFirstDateOfMonth(yyyymm)} AND date <= ${dateUtils.getLastDateOfMonth(yyyymm)}`
 
-await db.sql`
-INSERT INTO diaries (uuid, text, date, word_count) VALUES (
-    ${crypto.randomUUID()},
-    ${""},
-    ${dateUtils.getTodayString()},
-    ${0}
-)
-ON CONFLICT(date) DO NOTHING;
-`
+        for (let i = 0; i < yyyymm.daysInMonth; i++) {
+            timeline[i] = {
+                day: i,
+                word_count: 0
+            };
+        }
+
+        if (isCurrentMonth) {
+            for (let i = todayDayNumber; i < yyyymm.daysInMonth; i++) {
+                timeline[i].word_count = -1;
+            }
+        }
+
+        timelineData.forEach(({date, word_count}) => {
+            const day = Temporal.PlainDate.from(date).day - 1
+
+            timeline[timeline.findIndex((tlDay) => (tlDay.day === day))] = {
+                day,
+                word_count,
+                is_today: todayDayNumber === day
+            }
+        })
+
+        return timeline
+    }
+    async day(yyyymmdd: string) {
+        return await this.db.sql`SELECT * FROM diaries WHERE date = ${yyyymmdd}`
+    }
+    async updateText(text: string) {
+        await this.db.sql`UPDATE diaries SET text = ${text}, word_count = ${getWordCount(text)} WHERE date = ${dateUtils.getTodayString()}`
+
+    }
+}
+
+const db = new DB()
+await db.init()
+
 
 const session = {
     currentDate: dateUtils.getTodayString(),
@@ -34,19 +85,9 @@ const session = {
     set currentViewDate(yyyymmdd: string) {
         this.currentDate = yyyymmdd
     },
-    saving: false,
+    monthString: dateUtils.getMonthStringCapitalized(dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString())),
+    isCurrentMonth: dateUtils.nowInCurrentMonth(dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString()))
 }
-Object.defineProperty(window, "currentViewDate", {
-    get() {
-    },
-    set(yyyymmdd: string) {
-        this.currentViewDate = yyyymmdd
-    }
-})
-
-const [today] = await db.sql`SELECT * FROM diaries WHERE date = ${dateUtils.getTodayString()}`
-
-console.log(today)
 
 function getWordCount(text: string): number {
     const wordsArr = text.trim().split(/[\s,.;]+/);
@@ -54,39 +95,6 @@ function getWordCount(text: string): number {
         if (wordsArr[i] === '') wordsArr.splice(i, 1) && i--;
     }
     return wordsArr.length;
-}
-
-async function getTimeline(yyyymm: Temporal.PlainYearMonth) {
-    const timeline: DayData[] = []
-    const isCurrentMonth: boolean = dateUtils.nowInCurrentMonth(yyyymm)
-    const todayDayNumber: number = Temporal.Now.plainDateISO().day - 1
-
-    const timelineData = await db.sql`SELECT date, word_count FROM diaries WHERE date >= ${dateUtils.getFirstDateOfMonth(yyyymm)} AND date <= ${dateUtils.getLastDateOfMonth(yyyymm)}`
-
-    for (let i = 0; i < yyyymm.daysInMonth; i++) {
-        timeline[i] = {
-            day: i,
-            word_count: 0
-        };
-    }
-
-    if (isCurrentMonth) {
-        for (let i = todayDayNumber; i < yyyymm.daysInMonth; i++) {
-            timeline[i].word_count = -1;
-        }
-    }
-
-    timelineData.forEach(({date, word_count}) => {
-        const day = Temporal.PlainDate.from(date).day - 1
-
-        timeline[timeline.findIndex((tlDay) => (tlDay.day === day))] = {
-            day,
-            word_count,
-            is_today: todayDayNumber === day
-        }
-    })
-
-    return timeline
 }
 
 function generateTimelineHTML(timeline: DayData[]) {
@@ -119,10 +127,11 @@ async function generateTextView(yyyymmdd: string) {
     let output = ''
 
     if (dateUtils.isToday(yyyymmdd)) {
+        const [today] = await db.today()
         output += `
             <h2 class="text-blue-50 text-3xl self-start w-full">Автор, жги!</h2>
             <textarea
-                class="custom-paper overflow-hidden w-full text-gray-800 mt-5
+                class="custom-paper overflow-hidden scroll-smooth w-full text-gray-800 mt-5
                 text-2xl leading-10 pt-[50px] px-24 pb-9 mb-16 bg-local bg-blue-300
                 rounded-xl shadow-lg border-t-2 border-b-2 border-white max-w-screen-xl"
                 title="write something"
@@ -133,49 +142,61 @@ async function generateTextView(yyyymmdd: string) {
                 autoFocus>${today.text}</textarea>
         `
     } else {
-        const [entry] = await db.sql`SELECT * FROM diaries WHERE date = ${yyyymmdd}`
-        console.log(entry, yyyymmdd)
+        const [entry] = await db.day(yyyymmdd)
         output = `<pre class="whitespace-pre bg-zinc-300 rounded p-10 m-10">${entry.text}</pre>}`
     }
     return output
 }
 
+
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="grid grid-cols-3 text-blue-50 align-middle justify-center items-center h-20">
-            <button><<</button>
-            <h2 class="text-3xl font-bold text-blue-50 text-center">${dateUtils.getMonthStringCapitalized(dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString()))}</h2>
-            <button>>></button>
+            <button>
+                <<
+            </button>
+            
+            <h2 class="text-3xl font-bold text-blue-50 text-center">${session.monthString}</h2>
+            
+            <button 
+                disabled="${session.isCurrentMonth}"
+            >
+                >>
+            </button>
         </div>
         
-        <div id="timeline">
-        
-        </div>
+        <div id="timeline"></div>
         <div id="area">
             ${await generateTextView(session.currentViewDate)}
         </div>
 `
 
-generateTimelineHTML(await getTimeline(dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString())))
+
+function autosize(this: HTMLTextAreaElement) {
+    const scrollLeft = window.scrollX;
+    const scrollTop = window.scrollY;
+    if (this) {
+        this.style.overflow = 'hidden';
+        this.style.height = "auto";
+        this.style.height = `${Math.max(
+            this.scrollHeight,
+            160
+        )}px`;
+    }
+    window.scrollTo(scrollLeft, scrollTop);
+}
+
+generateTimelineHTML(await db.timeline(dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString())))
+autosize.call(document.querySelector<HTMLTextAreaElement>("#textarea")!)
 
 document.querySelector<HTMLTextAreaElement>("#textarea")!
     .addEventListener('input', async function () {
         const text = this.value
 
-        await db.sql`UPDATE diaries SET text = ${text}, word_count = ${getWordCount(text)} WHERE date = ${dateUtils.getTodayString()}`
+        await db.updateText(text)
 
-        generateTimelineHTML(await getTimeline(dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString())))
+        generateTimelineHTML(await db.timeline(dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString())))
 
-        const scrollLeft = window.scrollX;
-        const scrollTop = window.scrollY;
-        if (this) {
-            this.style.overflow = 'hidden';
-            this.style.height = "auto";
-            this.style.height = `${Math.max(
-                this.scrollHeight,
-                160
-            )}px`;
-        }
-        window.scrollTo(scrollLeft, scrollTop);
+        autosize.call(this);
     })
 
 document.querySelector<HTMLTextAreaElement>("#textarea")!
