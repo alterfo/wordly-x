@@ -1,7 +1,7 @@
 // @see - https://www.electron.build/configuration/configuration
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  "appId": "YourAppID",
+  "appId": "WordlyX",
   "asar": true,
   "productName": "Wordly-X",
   "directories": {
@@ -15,6 +15,12 @@
     "target": [
       "dmg"
     ],
+    entitlements: "build/entitlements.mac.plist",
+    entitlementsInherit: "build/entitlements.mac.plist",
+    "extendInfo": {
+      NSMicrophoneUsageDescription: "Wordly-X requires microphone access to record audio.",
+      "com.apple.security.device.audio-input": true,
+    },
     "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
   },
   "win": {

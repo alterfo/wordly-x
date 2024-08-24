@@ -1,16 +1,7 @@
-# Wordly-x
+# Electron app for audio memos and privately typed thoughts storage
 
-Десятая реинкарнация пет-проекта ведения персонального дневника
+OPFS, @sqlite.org/sqlite-wasm
 
-Стек: electron, sqlite, vite, vanillajs =)
+1-Day - 500 words
 
-В `yarn dev` режиме консоль приложения можно открыть **шорткатом как в браузере (command+option+I)
-
-Всё хранится во вшитой sqlite, с сервером приложение не общается.
-
-В планах:
-
-- доделки навигации
-- шифрование ключом
-- бэкап бд
-
+contribute with issues, please.

@@ -5,3 +5,26 @@
 .custom-paper {
     background: url('/bg/lines.png') repeat-y, url('/bg/paper.png') repeat;
 }
+
+label {
+    font-family: "NotoColorEmoji", sans-serif;
+    font-size: 3rem;
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    z-index: 5;
+    cursor: pointer;
+}
+
+
+.clip {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    grid-auto-columns: max-content;
+    grid-auto-rows: max-content;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    column-gap: 20px;
+    color: white;
+}

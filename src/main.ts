@@ -1,81 +1,12 @@
 import './style.css'
-import {SQLocal} from 'sqlocal'
-import {Temporal} from "@js-temporal/polyfill";
 import {dateUtils} from "./date-utils.ts";
 import {DayData} from "./types.ts";
-
-class DB {
-    constructor() {
-        this.db = new SQLocal('database.sqlite3')
-    }
-
-    db: SQLocal
-
-    async init() {
-        await this.db.sql`
-            CREATE TABLE IF NOT EXISTS diaries (
-                uuid TEXT PRIMARY KEY NOT NULL,
-                text TEXT NOT NULL,
-                date DATE NOT NULL UNIQUE,
-                word_count INTEGER NOT NULL DEFAULT 0
-            )
-        `
-        await this.db.sql`
-            INSERT INTO diaries (uuid, text, date, word_count) VALUES (
-                ${crypto.randomUUID()},
-                ${""},
-                ${dateUtils.getTodayString()},
-                ${0}
-            )
-            ON CONFLICT(date) DO NOTHING;
-        `
-    }
-    async today() {
-        return await this.db.sql`SELECT * FROM diaries WHERE date = ${dateUtils.getTodayString()}`
-    }
-    async timeline(yyyymm: Temporal.PlainYearMonth) {
-        const timeline: DayData[] = []
-        const isCurrentMonth: boolean = dateUtils.nowInCurrentMonth(yyyymm)
-        const todayDayNumber: number = Temporal.Now.plainDateISO().day - 1
-        const timelineData = await this.db.sql`SELECT date, word_count FROM diaries WHERE date >= ${dateUtils.getFirstDateOfMonth(yyyymm)} AND date <= ${dateUtils.getLastDateOfMonth(yyyymm)}`
-
-        for (let i = 0; i < yyyymm.daysInMonth; i++) {
-            timeline[i] = {
-                day: i,
-                word_count: 0
-            };
-        }
-
-        if (isCurrentMonth) {
-            for (let i = todayDayNumber; i < yyyymm.daysInMonth; i++) {
-                timeline[i].word_count = -1;
-            }
-        }
-
-        timelineData.forEach(({date, word_count}) => {
-            const day = Temporal.PlainDate.from(date).day - 1
-
-            timeline[timeline.findIndex((tlDay) => (tlDay.day === day))] = {
-                day,
-                word_count,
-                is_today: todayDayNumber === day
-            }
-        })
-
-        return timeline
-    }
-    async day(yyyymmdd: string) {
-        return await this.db.sql`SELECT * FROM diaries WHERE date = ${yyyymmdd}`
-    }
-    async updateText(text: string) {
-        await this.db.sql`UPDATE diaries SET text = ${text}, word_count = ${getWordCount(text)} WHERE date = ${dateUtils.getTodayString()}`
-
-    }
-}
+import {DB} from "./DB.ts";
+import {Recorder} from "./Recorder.ts";
+import {autosizeTextArea} from "./autosizeTextArea.ts";
 
 const db = new DB()
 await db.init()
-
 
 const session = {
     currentDate: dateUtils.getTodayString(),
@@ -86,15 +17,9 @@ const session = {
         this.currentDate = yyyymmdd
     },
     monthString: dateUtils.getMonthStringCapitalized(dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString())),
-    isCurrentMonth: dateUtils.nowInCurrentMonth(dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString()))
-}
-
-function getWordCount(text: string): number {
-    const wordsArr = text.trim().split(/[\s,.;]+/);
-    for (let i = 0; i < wordsArr.length; i++) {
-        if (wordsArr[i] === '') wordsArr.splice(i, 1) && i--;
-    }
-    return wordsArr.length;
+    currentMonth: dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString()),
+    today: (await db.today())[0],
+    currentDayUUID: (await db.today())[0].uuid,
 }
 
 function generateTimelineHTML(timeline: DayData[]) {
@@ -105,13 +30,14 @@ function generateTimelineHTML(timeline: DayData[]) {
         timelineHTML += `
             <div class="my-0.5 mx-0.1 cursor-pointer flex flex-col max-w-[50px]">
                 <span class="block text-xs text-blue-50 text-center">${day + 1}</span>
-                <button class='block font-normal text-center py-1'>
+                <button class='block font-normal text-center py-1' id='${day + 1}'>
                     <span class='${"block " + (
             word_count === -1 || word_count === 0 ? "bg-zinc-300"
                 : word_count > 0 && word_count < 500 ? "bg-yellow-300"
                     : word_count > 500 ? "bg-red-300"
                         : ""
-        ) + (is_today ? " border-4 border-b-blue-50" : "")}'>
+        ) + (is_today ? " border-4 border-b-blue-50" : "")}'
+                    >
                         ${word_count === -1 ? "—" : word_count}
                     </span>
                 </button>
@@ -121,6 +47,14 @@ function generateTimelineHTML(timeline: DayData[]) {
 
     timelineHTML += `</div>`
     document.querySelector("#timeline")!.innerHTML = timelineHTML
+
+    const buttons = document.querySelectorAll("#timeline button")
+    buttons.forEach((button) => {
+        button.addEventListener('click', async function () {
+            session.currentViewDate = dateUtils.getCurrentDate(session.currentMonth, parseInt(button.id)).toString()
+            document.querySelector("#area")!.innerHTML = await generateTextView(session.currentViewDate)
+        })
+    })
 }
 
 async function generateTextView(yyyymmdd: string) {
@@ -128,6 +62,7 @@ async function generateTextView(yyyymmdd: string) {
 
     if (dateUtils.isToday(yyyymmdd)) {
         const [today] = await db.today()
+        session.today = today
         output += `
             <h2 class="text-blue-50 text-3xl self-start w-full">Автор, жги!</h2>
             <textarea
@@ -143,7 +78,29 @@ async function generateTextView(yyyymmdd: string) {
         `
     } else {
         const [entry] = await db.day(yyyymmdd)
-        output = `<pre class="whitespace-pre bg-zinc-300 rounded p-10 m-10">${entry.text}</pre>}`
+        session.currentDayUUID = entry.uuid
+        output = `<pre class="whitespace-pre bg-zinc-300 rounded whitespace-pre-wrap p-10 m-10">${entry.text}</pre>}`
+    }
+    return output
+}
+
+async function generateClipsView(todayUUID: string) {
+
+    const audios = await db.getAudiosByDate(todayUUID)
+
+    let output = ''
+    for (let {audio} of audios) {
+        if (audio) {
+            const opfsRoot = await navigator.storage.getDirectory()
+            const fileHandle = await opfsRoot.getFileHandle(audio, {create: false})
+            const file = await fileHandle.getFile()
+
+            output += `<article class="clip">
+                            <audio controls="" src="${window.URL.createObjectURL(file)}"></audio>
+                            <span>${audio}</span><button>🗑</button>
+                        </article>`
+
+        }
     }
     return output
 }
@@ -151,42 +108,31 @@ async function generateTextView(yyyymmdd: string) {
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="grid grid-cols-3 text-blue-50 align-middle justify-center items-center h-20">
-            <button>
-                <<
-            </button>
-            
+            <button><<</button>
+
             <h2 class="text-3xl font-bold text-blue-50 text-center">${session.monthString}</h2>
-            
-            <button 
-                disabled="${session.isCurrentMonth}"
+
+            <button
+                disabled="${dateUtils.nowInCurrentMonth(dateUtils.getYYYYMMfromYYYYMMDD.call(this, session.currentViewDate))}"
             >
                 >>
             </button>
         </div>
-        
+
         <div id="timeline"></div>
+
+        <button class="text-white" id="start">Start</button>
+        <button class="text-white" id="stop">Stop</button>
+        <br>
+        <div id="clips">${await generateClipsView(session.currentDayUUID)}</div>
+
         <div id="area">
             ${await generateTextView(session.currentViewDate)}
         </div>
 `
 
-
-function autosize(this: HTMLTextAreaElement) {
-    const scrollLeft = window.scrollX;
-    const scrollTop = window.scrollY;
-    if (this) {
-        this.style.overflow = 'hidden';
-        this.style.height = "auto";
-        this.style.height = `${Math.max(
-            this.scrollHeight,
-            160
-        )}px`;
-    }
-    window.scrollTo(scrollLeft, scrollTop);
-}
-
 generateTimelineHTML(await db.timeline(dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString())))
-autosize.call(document.querySelector<HTMLTextAreaElement>("#textarea")!)
+autosizeTextArea.call(document.querySelector<HTMLTextAreaElement>("#textarea")!)
 
 document.querySelector<HTMLTextAreaElement>("#textarea")!
     .addEventListener('input', async function () {
@@ -196,7 +142,7 @@ document.querySelector<HTMLTextAreaElement>("#textarea")!
 
         generateTimelineHTML(await db.timeline(dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString())))
 
-        autosize.call(this);
+        autosizeTextArea.call(this);
     })
 
 document.querySelector<HTMLTextAreaElement>("#textarea")!
@@ -211,7 +157,12 @@ document.querySelector<HTMLTextAreaElement>("#textarea")!
         }
     })
 
-// Use contextBridge
-window.ipcRenderer.on('main-process-message', (_event, message) => {
-    console.log(message)
+new Recorder({
+    soundClips: document.getElementById('clips')!,
+    startButton: document.getElementById('start')!,
+    stopButton: document.getElementById('stop')!,
+})
+
+window.addEventListener('audio-saved', async ({detail: {clipName}}: any) => {
+    await db.insertAudio(session.today.uuid, clipName)
 })
