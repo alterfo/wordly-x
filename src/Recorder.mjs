@@ -1,20 +1,16 @@
 import {Temporal} from "@js-temporal/polyfill";
 
 export class Recorder {
-    private readonly soundClips: HTMLElement
-    private startButton: HTMLElement
-    private stopButton: HTMLElement
-    private mediaRecorder!: MediaRecorder
-    private writableFileStream!: FileSystemWritableFileStream
+    soundClips
+    startButton
+    stopButton
+    mediaRecorder
+    writableFileStream
 
-    private chunks: Blob[] = [];
-    private clipName: string = ""
+    chunks = [];
+    clipName = ""
 
-    constructor({soundClips, startButton, stopButton}: {
-        soundClips: HTMLElement;
-        startButton: HTMLElement;
-        stopButton: HTMLElement;
-    }) {
+    constructor({soundClips, startButton, stopButton}) {
         this.soundClips = soundClips
         this.startButton = startButton
         this.stopButton = stopButton
@@ -28,7 +24,7 @@ export class Recorder {
         })
     }
 
-    private onRecorderStop(soundClips: HTMLElement) {
+    onRecorderStop(soundClips) {
         return async () => {
             const blob = new Blob(this.chunks, {type: "audio/ogg; codecs=opus"});
             this.generateClipsContainer(soundClips, blob);
@@ -38,13 +34,11 @@ export class Recorder {
                     clipName: this.clipName
                 }
             }))
-            await this.writableFileStream!.close();
+            await this.writableFileStream.close();
         };
     }
 
-    generateClipsContainer(soundClips: HTMLElement, blob: Blob) {
-
-
+    generateClipsContainer(soundClips, blob) {
         const clipContainer = document.createElement("article");
         const clipLabel = document.createElement("span");
         const audio = document.createElement("audio");
@@ -63,10 +57,11 @@ export class Recorder {
         audio.src = window.URL.createObjectURL(blob);
     }
 
-    private startButtonClick() {
+    startButtonClick() {
         return async () => {
             if (this.mediaRecorder) {
-                this.mediaRecorder.start(200);
+                // this.mediaRecorder.start(300) // save every 300ms in buffer memory
+                this.mediaRecorder.start() // save only when Stop is clicked
                 this.startButton.style.background = "red";
                 this.startButton.style.color = "black";
 
@@ -75,7 +70,7 @@ export class Recorder {
         };
     }
 
-    private stopButtonClick() {
+    stopButtonClick() {
         return () => {
             if (this.mediaRecorder) {
                 this.mediaRecorder.stop();
@@ -87,23 +82,23 @@ export class Recorder {
         };
     }
 
-    private async initWritableFileStream() {
+    async initWritableFileStream() {
         const opfsRoot = await navigator.storage.getDirectory();
         const fileHandle = await opfsRoot
             .getFileHandle(this.generateClipName(), {create: true});
         this.writableFileStream = await fileHandle.createWritable();
     }
 
-    private generateClipName() {
+    generateClipName() {
         this.clipName = Recorder.getTodayString() +"---" + crypto.randomUUID().toString();
         return this.clipName
     }
 
-    private static getTodayString() {
+    static getTodayString() {
         return Temporal.Now.plainDate('iso8601').toString();
     }
 
-    private async initAudioStream() {
+    async initAudioStream() {
         const audioStream = await navigator.mediaDevices.getUserMedia({
             audio: {
                 echoCancellation: true

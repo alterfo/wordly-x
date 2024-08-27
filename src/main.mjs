@@ -1,19 +1,17 @@
 import './style.css'
-import {dateUtils} from "./date-utils.ts";
-import {DayData} from "./types.ts";
-import {DB} from "./DB.ts";
-import {Recorder} from "./Recorder.ts";
-import {autosizeTextArea} from "./autosizeTextArea.ts";
+import {dateUtils} from "./date-utils.mjs";
+import {DB} from "./DB.mjs";
+import {Recorder} from "./Recorder.mjs";
+import {autosizeTextArea} from "./autosizeTextArea.mjs";
 
 const db = new DB()
-await db.init()
 
 const session = {
     currentDate: dateUtils.getTodayString(),
     get currentViewDate() {
         return this.currentDate
     },
-    set currentViewDate(yyyymmdd: string) {
+    set currentViewDate(yyyymmdd) {
         this.currentDate = yyyymmdd
     },
     monthString: dateUtils.getMonthStringCapitalized(dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString())),
@@ -22,7 +20,7 @@ const session = {
     currentDayUUID: (await db.today())[0].uuid,
 }
 
-function generateTimelineHTML(timeline: DayData[]) {
+function generateTimelineHTML(timeline) {
     let timelineHTML = `
             <div class="grid grid-cols-[repeat(auto-fill,_minmax(1.7em,_1fr))] grid-rows-[50px] gap-2">
     `
@@ -32,11 +30,13 @@ function generateTimelineHTML(timeline: DayData[]) {
                 <span class="block text-xs text-blue-50 text-center">${day + 1}</span>
                 <button class='block font-normal text-center py-1' id='${day + 1}'>
                     <span class='${"block " + (
-            word_count === -1 || word_count === 0 ? "bg-zinc-300"
+            word_count === - 1 || word_count === 0 ? "bg-zinc-300"
                 : word_count > 0 && word_count < 500 ? "bg-yellow-300"
                     : word_count > 500 ? "bg-red-300"
                         : ""
-        ) + (is_today ? " border-4 border-b-blue-50" : "")}'
+        ) + (
+            is_today ? " border-4 border-b-blue-50" : ""
+        ) }'
                     >
                         ${word_count === -1 ? "—" : word_count}
                     </span>
@@ -46,25 +46,25 @@ function generateTimelineHTML(timeline: DayData[]) {
     }
 
     timelineHTML += `</div>`
-    document.querySelector("#timeline")!.innerHTML = timelineHTML
+    document.querySelector("#timeline").innerHTML = timelineHTML
 
     const buttons = document.querySelectorAll("#timeline button")
     buttons.forEach((button) => {
         button.addEventListener('click', async function () {
             session.currentViewDate = dateUtils.getCurrentDate(session.currentMonth, parseInt(button.id)).toString()
-            document.querySelector("#area")!.innerHTML = await generateTextView(session.currentViewDate)
+            document.querySelector("#area").innerHTML = await generateTextView(session.currentViewDate)
         })
     })
 }
 
-async function generateTextView(yyyymmdd: string) {
+async function generateTextView(yyyymmdd) {
     let output = ''
 
     if (dateUtils.isToday(yyyymmdd)) {
         const [today] = await db.today()
         session.today = today
         output += `
-            <h2 class="text-blue-50 text-3xl self-start w-full">Автор, жги!</h2>
+            <h2 class="text-blue-50 text-3xl self-start w-full">Автор, жги</h2>
             <textarea
                 class="custom-paper overflow-hidden scroll-smooth w-full text-gray-800 mt-5
                 text-2xl leading-10 pt-[50px] px-24 pb-9 mb-16 bg-local bg-blue-300
@@ -79,12 +79,12 @@ async function generateTextView(yyyymmdd: string) {
     } else {
         const [entry] = await db.day(yyyymmdd)
         session.currentDayUUID = entry.uuid
-        output = `<pre class="whitespace-pre bg-zinc-300 rounded whitespace-pre-wrap p-10 m-10">${entry.text}</pre>}`
+        output = `<pre class="whitespace-pre bg-zinc-300 rounded whitespace-pre-wrap p-10 m-10">${entry.text}</pre>}` // оба whitespace-pre нужны
     }
     return output
 }
 
-async function generateClipsView(todayUUID: string) {
+async function generateClipsView(todayUUID) {
 
     const audios = await db.getAudiosByDate(todayUUID)
 
@@ -105,8 +105,7 @@ async function generateClipsView(todayUUID: string) {
     return output
 }
 
-
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
+document.querySelector('#app').innerHTML = `
         <div class="grid grid-cols-3 text-blue-50 align-middle justify-center items-center h-20">
             <button><<</button>
 
@@ -132,9 +131,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 `
 
 generateTimelineHTML(await db.timeline(dateUtils.getYYYYMMfromYYYYMMDD(dateUtils.getTodayString())))
-autosizeTextArea.call(document.querySelector<HTMLTextAreaElement>("#textarea")!)
+autosizeTextArea.call(document.querySelector<HTMLTextAreaElement>("#textarea"))
 
-document.querySelector<HTMLTextAreaElement>("#textarea")!
+document.querySelector("#textarea")
     .addEventListener('input', async function () {
         const text = this.value
 
@@ -145,7 +144,7 @@ document.querySelector<HTMLTextAreaElement>("#textarea")!
         autosizeTextArea.call(this);
     })
 
-document.querySelector<HTMLTextAreaElement>("#textarea")!
+document.querySelector("#textarea")
     .addEventListener('keydown', function (e) {
         if (e.key === "Tab") {
             e.preventDefault()
@@ -158,11 +157,11 @@ document.querySelector<HTMLTextAreaElement>("#textarea")!
     })
 
 new Recorder({
-    soundClips: document.getElementById('clips')!,
-    startButton: document.getElementById('start')!,
-    stopButton: document.getElementById('stop')!,
+    soundClips: document.getElementById('clips'),
+    startButton: document.getElementById('start'),
+    stopButton: document.getElementById('stop')
 })
 
-window.addEventListener('audio-saved', async ({detail: {clipName}}: any) => {
+window.addEventListener('audio-saved', async ({detail: {clipName}}) => {
     await db.insertAudio(session.today.uuid, clipName)
 })

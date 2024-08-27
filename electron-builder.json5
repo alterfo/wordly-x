@@ -18,7 +18,7 @@
     entitlements: "build/entitlements.mac.plist",
     entitlementsInherit: "build/entitlements.mac.plist",
     "extendInfo": {
-      NSMicrophoneUsageDescription: "Wordly-X requires microphone access to record audio.",
+      NSMicrophoneUsageDescription: "Нужен доступ к Вашему микрофону.",
       "com.apple.security.device.audio-input": true,
     },
     "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
