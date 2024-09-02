@@ -4,11 +4,11 @@ OPFS, @sqlite.org/sqlite-wasm
 
 1-Day - 500 words
 
-The Product is Delivered by "Сделай Сам" approach.
+The Product is Delivered by DIY approach.
 
-1/ Download this repository (IQ ge 90)
-2/ run )
+1/ Download this repository
+2/ run
 
-    - a/ 
+
 
 contribute with issues, please.

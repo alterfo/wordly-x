@@ -4,6 +4,8 @@ import {DB} from "./DB.mjs";
 import {Recorder} from "./Recorder.mjs";
 import {autosizeTextArea} from "./autosizeTextArea.mjs";
 
+const __DEBUG__ = true
+
 const db = new DB()
 
 const session = {
@@ -104,6 +106,8 @@ async function generateClipsView(todayUUID) {
     }
     return output
 }
+
+__DEBUG__ && console.log(document)
 
 document.querySelector('#app').innerHTML = `
         <div class="grid grid-cols-3 text-blue-50 align-middle justify-center items-center h-20">

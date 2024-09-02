@@ -1,8 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/*.mjs"],
+  mode: 'jit',
+  content: ["./src/**/*.mjs", "./src/index.html"],
+  purge: [
+    './src/index.html',
+    './src/**/*.mjs',
+  ],
   theme: {
     extend: {},
   },

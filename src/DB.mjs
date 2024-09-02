@@ -4,7 +4,6 @@ import {getWordCount} from "./getWordCount.mjs";
 
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 import path from "node:path";
-import {safeStorage} from "electron";
 
 export class DB {
     db;
@@ -12,12 +11,14 @@ export class DB {
     constructor() {
         sqlite3InitModule({print: console.log, printErr: console.error})
             .then((sqlite3Static) => {
-            this.db =
-                'opfs' in sqlite3Static
-                    ? new sqlite3Static.oo1.OpfsDb('/mydb.sqlite3')
-                    : new sqlite3Static.oo1.DB('/mydb.sqlite3', 'ct');
-        });
+                this.db =
+                    'opfs' in sqlite3Static
+                        ? new sqlite3Static.oo1.OpfsDb('/mydb.sqlite3')
+                        : new sqlite3Static.oo1.DB('/mydb.sqlite3', 'ct');
 
+
+                this.init()
+            });
 
 
         this.getDatabaseFile('/mydb.sqlite3').then(databaseFile => {
@@ -31,13 +32,11 @@ export class DB {
 
             URL.revokeObjectURL(fileUrl);
         })
-
-        this.init()
     }
 
     async getDatabaseFile(fileName) {
-        const tempFileName = `backup-${Date.now()}--${fileName}`;
-        await this.db.sql`VACUUM INTO ${path.join('/')}/${tempFileName}`;
+        const tempFileName = `backup-${ Date.now() }--${ fileName }`;
+        await this.db.sql`VACUUM INTO ${ path.join('/') }/${ tempFileName }`;
 
         let dirHandle = await navigator.storage.getDirectory();
         for (let dirName of path)
@@ -55,7 +54,6 @@ export class DB {
     }
 
     init() {
-        console.log(safeStorage.isEncryptionAvailable());
         this.db.exec({
             sql: `
             CREATE TABLE IF NOT EXISTS diaries (
@@ -94,7 +92,7 @@ export class DB {
     }
 
     async timeline(yyyymm) {
-        const timeline= []
+        const timeline = []
         const isCurrentMonth = dateUtils.nowInCurrentMonth(yyyymm)
         const todayDayNumber = Temporal.Now.plainDateISO().day - 1
         const timelineData = await this.db.exec({sql: `SELECT date, word_count FROM diaries WHERE date >= ${dateUtils.getFirstDateOfMonth(yyyymm)} AND date <= ${dateUtils.getLastDateOfMonth(yyyymm)}`})
@@ -105,7 +103,7 @@ export class DB {
     }
 
     _fulfillTimeline(yyyymm, timeline, isCurrentMonth, todayDayNumber, timelineData) {
-        for (let i = 0; i < yyyymm.daysInMonth; i++) {
+        for (let i = 0; i < yyyymm.daysInMonth; i ++) {
             timeline[i] = {
                 day: i,
                 word_count: 0
@@ -113,15 +111,17 @@ export class DB {
         }
 
         if (isCurrentMonth) {
-            for (let i = todayDayNumber; i < yyyymm.daysInMonth; i++) {
-                timeline[i].word_count = -1;
+            for (let i = todayDayNumber; i < yyyymm.daysInMonth; i ++) {
+                timeline[i].word_count = - 1;
             }
         }
 
         for (const {date, word_count} of timelineData) {
             const day = Temporal.PlainDate.from(date).day - 1
 
-            timeline[timeline.findIndex((tlDay) => (tlDay.day === day))] = {
+            timeline[timeline.findIndex((tlDay) => (
+                tlDay.day === day
+            ))] = {
                 day,
                 word_count,
                 is_today: todayDayNumber === day

@@ -1,15 +1,20 @@
 <!doctype html>
-<html lang="en" class="font-serif bg-gray-900 bg-[url(/bg/body-bg.png)] bg-repeat">
+<html lang="en" class="bg-gray-900 bg-[url(/bg/body-bg.png)] bg-repeat">
   <head>
     <meta charset="UTF-8" />
+    <link rel="stylesheet" href="output.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp" />
     <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin" />
     <meta http-equiv="Permissions-Policy" content="microphone=(self)" />
+
     <title>Wordly-X</title>
+    <script type="module" src="main.mjs" defer></script>
   </head>
   <body class="grid grid-cols-1 mx-4">
-  <div id="app"></div>
-    <script type="module" src="/src/main.mjs"></script>
+      <h1 class="bg-gradient-to-br text-white">Wordly-X</h1>
+      <div
+              id="app"
+      ></div>
   </body>
 </html>
