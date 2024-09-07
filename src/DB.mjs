@@ -1,9 +1,9 @@
-import {dateUtils} from "./date-utils.mjs";
-import {Temporal} from "@js-temporal/polyfill";
 import {getWordCount} from "./getWordCount.mjs";
 
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 import path from "node:path";
+import {format, getDay, lastDayOfMonth} from "date-fns";
+
 
 export class DB {
     db;
@@ -79,7 +79,7 @@ export class DB {
             INSERT INTO diaries (uuid, text, date, word_count) VALUES (
                 ${crypto.randomUUID()},
                 ${""},
-                ${dateUtils.getTodayString()},
+                ${format(new Date(), "yyyy-MM-dd")},
                 ${0}
             )
             ON CONFLICT(date) DO NOTHING;
@@ -88,14 +88,18 @@ export class DB {
     }
 
     async today() {
-        return await this.db.exec({sql: `SELECT * FROM diaries WHERE date = ${dateUtils.getTodayString()}`})
+        return await this.db.exec({sql: `SELECT * FROM diaries WHERE date = ${format(new Date(), "yyyy-MM-dd")}`})
     }
 
     async timeline(yyyymm) {
         const timeline = []
-        const isCurrentMonth = dateUtils.nowInCurrentMonth(yyyymm)
-        const todayDayNumber = Temporal.Now.plainDateISO().day - 1
-        const timelineData = await this.db.exec({sql: `SELECT date, word_count FROM diaries WHERE date >= ${dateUtils.getFirstDateOfMonth(yyyymm)} AND date <= ${dateUtils.getLastDateOfMonth(yyyymm)}`})
+        const isCurrentMonth = true
+        const todayDayNumber = getDay(new Date()) - 1
+
+        const today = new Date()
+        const firstDateOfMonth = format(today, 'yyyy-MM-01')
+        const lastDateOfMonth = format(lastDayOfMonth(today), 'yyyy-MM-dd')
+        const timelineData = await this.db.exec({sql: `SELECT date, word_count FROM diaries WHERE date >= ${firstDateOfMonth} AND date <= ${lastDateOfMonth}`})
 
         this._fulfillTimeline(yyyymm, timeline, isCurrentMonth, todayDayNumber, timelineData);
 
@@ -134,7 +138,7 @@ export class DB {
     }
 
     async updateText(text) {
-        await this.db.exec({sql: `UPDATE diaries SET text = ${text}, word_count = ${getWordCount(text)} WHERE date = ${dateUtils.getTodayString()}`})
+        await this.db.exec({sql: `UPDATE diaries SET text = ${text}, word_count = ${getWordCount(text)} WHERE date = ${format(new Date(), "yyyy-MM-dd")}`})
     }
 
     async insertAudio(todayUUID, audioFileName) {

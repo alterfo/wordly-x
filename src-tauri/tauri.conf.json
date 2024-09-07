@@ -1,5 +1,5 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "$schema": "node_modules/@tauri-apps/cli/schema.json",
   "build": {
     "devPath": "../src",
     "distDir": "../src",
@@ -29,7 +29,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.tauri.dev",
+      "identifier": "com.wordly-x.dev",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
