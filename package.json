@@ -1,7 +1,7 @@
 {
   "name": "wordly-x",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "tauri dev && npx tailwindcss -i src/style.css -o ./src/output.css --watch",
@@ -24,7 +24,6 @@
   "dependencies": {
     "@js-temporal/polyfill": "^0.4.4",
     "@sqlite.org/sqlite-wasm": "3.46.1-build1",
-    "date-fns": "^3.6.0",
     "vite-plugin-tauri": "^3.3.0",
     "vosk": "^0.3.39"
   }
