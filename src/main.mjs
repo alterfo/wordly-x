@@ -1,5 +1,4 @@
 import './style.css'
-import {dateUtils} from "./date-utils.mjs";
 import {DB} from "./DB.mjs";
 import {Recorder} from "./Recorder.mjs";
 import {autosizeTextArea} from "./autosizeTextArea.mjs";
@@ -7,17 +6,22 @@ import {autosizeTextArea} from "./autosizeTextArea.mjs";
 const db = new DB()
 
 const session = {
-    currentDate: dateUtils.getTodayString(),
-    get currentViewDate() {
+    currentDate: (new Date()).toISOString().substring(0, 10),
+    get viewDate() {
         return this.currentDate
     },
-    set currentViewDate(yyyymmdd) {
+    set viewDate(yyyymmdd) {
         this.currentDate = yyyymmdd
     },
-    monthString: dateUtils.getMonthStringCapitalized(dateUtils.getTodayString().substring(0, 7)),
-    currentMonth: dateUtils.getTodayString().substring(0, 7),
-    today: (await db.today())[0],
-    currentDayUUID: (await db.today())[0].uuid,
+    monthString: (new Date())
+        .toLocaleString('ru-RU', {
+            month: 'long',
+            year: 'numeric',
+            calendar: 'iso8601'
+        }),
+    yyyymm: (new Date()).toISOString().substring(0, 7),
+    todayItem: (await db.today())[0],
+    viewTextUUID: (await db.today())[0].uuid,
 }
 
 function generateTimelineHTML(timeline) {
@@ -51,20 +55,27 @@ function generateTimelineHTML(timeline) {
     const buttons = document.querySelectorAll("#timeline button")
     buttons.forEach((button) => {
         button.addEventListener('click', async function () {
-            session.currentViewDate = dateUtils.getCurrentDate(session.currentMonth, parseInt(button.id)).toString()
-            document.querySelector("#area").innerHTML = await generateTextView(session.currentViewDate)
+            const firstDateOfMonthWeAreIn =(new Date((session.yyyymm) + '-01'))
+            firstDateOfMonthWeAreIn.setDate(parseInt(button.id))
+            session.viewDate = firstDateOfMonthWeAreIn.toISOString().split('T')[0]
+
+            document.querySelector("#area").innerHTML = await textView()
         })
     })
 }
 
-async function generateTextView(yyyymmdd) {
+async function editableTextView() {
     let output = ''
 
-    if (dateUtils.isToday(yyyymmdd)) {
-        const [today] = await db.today()
-        session.today = today
-        output += `
-            <h2 class="text-blue-50 text-3xl self-start w-full">Автор, жги</h2>
+    const [today] = await db.today()
+
+    session.todayItem = today
+
+    output += `
+            <h2 class="text-blue-50 text-3xl self-start w-full">
+                Автор, жги
+            </h2>
+            
             <textarea
                 class="custom-paper overflow-hidden scroll-smooth w-full text-gray-800 mt-5
                 text-2xl leading-10 pt-[50px] px-24 pb-9 mb-16 bg-local bg-blue-300
@@ -74,13 +85,24 @@ async function generateTextView(yyyymmdd) {
                 rows="10"
                 name="entry"
                 id="textarea"
-                autoFocus>${today.text}</textarea>
-        `
-    } else {
-        const [entry] = await db.day(yyyymmdd)
-        session.currentDayUUID = entry.uuid
-        output = `<pre class="whitespace-pre bg-zinc-300 rounded whitespace-pre-wrap p-10 m-10">${entry.text}</pre>}` // оба whitespace-pre нужны
-    }
+                autoFocus>${today.text}
+            </textarea>
+    `
+
+    return output
+}
+
+
+async function textView() {
+    let output = ''
+    const [{text, uuid}] = await db.day(session.viewDate)
+
+    session.viewTextUUID = uuid
+
+    // оба whitespace-pre нужны для правильных переносов
+    output = `<pre class="whitespace-pre bg-zinc-300 rounded whitespace-pre-wrap p-10 m-10"> 
+                        ${text}
+                    </pre>}`
     return output
 }
 
@@ -112,7 +134,7 @@ document.querySelector('#app').innerHTML = `
             <h2 class="text-3xl font-bold text-blue-50 text-center">${session.monthString}</h2>
 
             <button
-                disabled="${dateUtils.nowInCurrentMonth(session.currentViewDate.substring(0, 7))}"
+                hidden="${session.yyyymm === (new Date()).toISOString().substring(0, 7)}"
             >
                 >>
             </button>
@@ -123,10 +145,12 @@ document.querySelector('#app').innerHTML = `
         <button class="text-white" id="start">Start</button>
         <button class="text-white" id="stop">Stop</button>
         <br>
-        <div id="clips">${await generateClipsView(session.currentDayUUID)}</div>
+        <div id="clips">${await generateClipsView(session.viewTextUUID)}</div>
 
         <div id="area">
-            ${await generateTextView(session.currentViewDate)}
+            ${(new Date(session.viewDate)).toDateString() === (new Date()).toDateString() ?
+                    await editableTextView() :
+                    await textView(session.viewDate)}
         </div>
 `
 
@@ -163,5 +187,5 @@ new Recorder({
 })
 
 window.addEventListener('audio-saved', async ({detail: {clipName}}) => {
-    await db.insertAudio(session.today.uuid, clipName)
+    await db.insertAudio(session.todayItem.uuid, clipName)
 })
