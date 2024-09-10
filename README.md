@@ -2,7 +2,7 @@
 
 Wordly-X is an Electron-based application designed for recording audio memos and storing typed thoughts privately. It leverages modern web and desktop technologies to provide a seamless user experience for daily journaling and audio recording. The application is built using Vite for bundling, TailwindCSS for styling, and it integrates SQLite for data persistence through WebAssembly.
 
-## High-Level Codemap
+## High-Level Code Map
 
 ### Key Components
 
@@ -42,6 +42,11 @@ Wordly-X is an Electron-based application designed for recording audio memos and
 - **Electron and Renderer Process**: The communication between Electron's main process and renderer process is minimal, constrained to essential window management and IPC.
 - **UI and Database**: The UI components interact with the database strictly through the `DB` class interface, ensuring any database schema changes do not directly impact UI components.
 
+### Init order
+
+- **DB** instance creates db and today's item if they does not exist
+- **Session** initialises operational data (State pattern) for UI
+- ****
 ## Conclusion
 
 The architecture of Wordly-X is designed to be modular and maintainable, with clear separation between the application's core functionalities. By leveraging modern web technologies and Electron, it provides a robust platform for private journaling and audio recording. The use of SQLite with WebAssembly ensures data privacy and portability, making Wordly-X a self-contained and reliable application for users.

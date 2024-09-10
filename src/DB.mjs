@@ -1,5 +1,5 @@
 
-import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
+import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 import path from "node:path";
 import {format, getDay, lastDayOfMonth} from "date-fns";
 
@@ -22,9 +22,6 @@ export class DB {
                     'opfs' in sqlite3Static
                         ? new sqlite3Static.oo1.OpfsDb('/mydb.sqlite3')
                         : new sqlite3Static.oo1.DB('/mydb.sqlite3', 'ct');
-
-
-                this.init()
             });
 
 
@@ -92,10 +89,16 @@ export class DB {
             ON CONFLICT(date) DO NOTHING;
         `
         })
+
+        return this.db.exec({
+            sql: `
+                SELECT diary FROM diaries WHERE date = ${format(new Date(), "yyyy-MM-dd")}
+            `
+        })
     }
 
-    async today() {
-        return await this.db.exec({sql: `SELECT * FROM diaries WHERE date = ${format(new Date(), "yyyy-MM-dd")}`})
+    async viewText(date) {
+        return await this.db.exec({sql: `SELECT * FROM diaries WHERE date = ${(new Date(date)).toISOString().substring(0, 10)}`})
     }
 
     async timeline(yyyymm) {

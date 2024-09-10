@@ -24,6 +24,7 @@
   "dependencies": {
     "@js-temporal/polyfill": "^0.4.4",
     "@sqlite.org/sqlite-wasm": "3.46.1-build1",
+    "date-fns": "^3.6.0",
     "vite-plugin-tauri": "^3.3.0",
     "vosk": "^0.3.39"
   }

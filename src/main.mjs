@@ -1,9 +1,9 @@
-import './style.css'
 import {DB} from "./DB.mjs";
-import {Recorder} from "./Recorder.mjs";
+// import {Recorder} from "./Recorder.mjs";
 import {autosizeTextArea} from "./autosizeTextArea.mjs";
 
 const db = new DB()
+await db.init()
 
 const session = {
     currentDate: (new Date()).toISOString().substring(0, 10),
@@ -20,8 +20,8 @@ const session = {
             calendar: 'iso8601'
         }),
     yyyymm: (new Date()).toISOString().substring(0, 7),
-    todayItem: (await db.today())[0],
-    viewTextUUID: (await db.today())[0].uuid,
+    todayItem: (await db.viewText())[0],
+    viewTextUUID: (await db.viewText())[0].uuid,
 }
 
 function generateTimelineHTML(timeline) {
@@ -67,7 +67,7 @@ function generateTimelineHTML(timeline) {
 async function editableTextView() {
     let output = ''
 
-    const [today] = await db.today()
+    const [today] = await db.viewText()
 
     session.todayItem = today
 
@@ -180,12 +180,3 @@ document.querySelector("#textarea")
         }
     })
 
-new Recorder({
-    soundClips: document.getElementById('clips'),
-    startButton: document.getElementById('start'),
-    stopButton: document.getElementById('stop')
-})
-
-window.addEventListener('audio-saved', async ({detail: {clipName}}) => {
-    await db.insertAudio(session.todayItem.uuid, clipName)
-})
