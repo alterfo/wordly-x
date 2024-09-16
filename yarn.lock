@@ -1083,12 +1083,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sqlite.org/sqlite-wasm@npm:3.46.1-build1":
-  version: 3.46.1-build1
-  resolution: "@sqlite.org/sqlite-wasm@npm:3.46.1-build1"
+"@sqlite.org/sqlite-wasm@npm:^3.46.1-build3":
+  version: 3.46.1-build3
+  resolution: "@sqlite.org/sqlite-wasm@npm:3.46.1-build3"
   bin:
     sqlite-wasm: bin/index.js
-  checksum: 10c0/c52fb0e589996a8a9c6651b01169162b5974ec6c4d554edd90e6f13f4a81324f7d5ea3ae564ea7d152b972badafdaccf4a89a1b994ca12f722b0c86eed9e0585
+  checksum: 10c0/bb8da7ed5c716470c8c3c82ec348914baf8f8ce763881311acfbb40e93f5548afee07d7e312a6d3988fee9aa5d001c14a5e064aabf81803e16482c270cbfd542
+  languageName: node
+  linkType: hard
+
+"@tauri-apps/api@npm:^1.6.0":
+  version: 1.6.0
+  resolution: "@tauri-apps/api@npm:1.6.0"
+  checksum: 10c0/c3d9a0126093061b95c968d346dc47bb3ca99056a3b03b53b9f8d8f37c539479298495b79df095c2745a10dcbd4e40e161ec4b148819df2acfa20fa61845001b
   languageName: node
   linkType: hard
 
@@ -1367,11 +1374,11 @@ __metadata:
   linkType: hard
 
 "acorn-walk@npm:^8.0.2":
-  version: 8.3.3
-  resolution: "acorn-walk@npm:8.3.3"
+  version: 8.3.4
+  resolution: "acorn-walk@npm:8.3.4"
   dependencies:
     acorn: "npm:^8.11.0"
-  checksum: 10c0/4a9e24313e6a0a7b389e712ba69b66b455b4cb25988903506a8d247e7b126f02060b05a8a5b738a9284214e4ca95f383dd93443a4ba84f1af9b528305c7f243b
+  checksum: 10c0/76537ac5fb2c37a64560feaf3342023dadc086c46da57da363e64c6148dc21b57d49ace26f949e225063acb6fb441eabffd89f7a3066de5ad37ab3e328927c62
   languageName: node
   linkType: hard
 
@@ -1429,9 +1436,9 @@ __metadata:
   linkType: hard
 
 "ansi-regex@npm:^6.0.1":
-  version: 6.0.1
-  resolution: "ansi-regex@npm:6.0.1"
-  checksum: 10c0/cbe16dbd2c6b2735d1df7976a7070dd277326434f0212f43abf6d87674095d247968209babdaad31bb00882fa68807256ba9be340eec2f1004de14ca75f52a08
+  version: 6.1.0
+  resolution: "ansi-regex@npm:6.1.0"
+  checksum: 10c0/a91daeddd54746338478eef88af3439a7edf30f8e23196e2d6ed182da9add559c601266dbef01c2efa46a958ad6f1f8b176799657616c702b5b02e799e7fd8dc
   languageName: node
   linkType: hard
 
@@ -1756,9 +1763,9 @@ __metadata:
   linkType: hard
 
 "caniuse-lite@npm:^1.0.30001646":
-  version: 1.0.30001659
-  resolution: "caniuse-lite@npm:1.0.30001659"
-  checksum: 10c0/11dc1c0795505d5c629cdf02361d7d60249646a49ed2868997144c3d9c6b0c3e18d87f6ea2b48b6deed593c483271003cebca7dd805fbda96607a9b83899eeaa
+  version: 1.0.30001660
+  resolution: "caniuse-lite@npm:1.0.30001660"
+  checksum: 10c0/d28900b56c597176d515c3175ca75c454f2d30cb2c09a44d7bdb009bb0c4d8a2557905adb77642889bbe9feb85fbfe9d974c8b8e53521fb4b50ee16ab246104e
   languageName: node
   linkType: hard
 
@@ -5187,7 +5194,8 @@ __metadata:
   resolution: "wordly-x@workspace:."
   dependencies:
     "@js-temporal/polyfill": "npm:^0.4.4"
-    "@sqlite.org/sqlite-wasm": "npm:3.46.1-build1"
+    "@sqlite.org/sqlite-wasm": "npm:^3.46.1-build3"
+    "@tauri-apps/api": "npm:^1.6.0"
     "@tauri-apps/cli": "npm:^1.6.1"
     autoprefixer: "npm:^10.4.20"
     date-fns: "npm:^3.6.0"

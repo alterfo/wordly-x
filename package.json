@@ -4,13 +4,13 @@
   "version": "0.3.0",
   "type": "module",
   "scripts": {
-    "dev": "tauri dev && npx tailwindcss -i src/style.css -o ./src/output.css --watch",
+    "dev": "tauri dev",
     "build": "vite build",
-    "preview": "vite preview",
     "tauri": "tauri",
     "test": "jest"
   },
   "devDependencies": {
+    "@tauri-apps/api": "^1.6.0",
     "@tauri-apps/cli": "^1.6.1",
     "autoprefixer": "^10.4.20",
     "globals": "^15.9.0",
@@ -23,7 +23,7 @@
   "packageManager": "yarn@4.4.0+sha512.91d93b445d9284e7ed52931369bc89a663414e5582d00eea45c67ddc459a2582919eece27c412d6ffd1bd0793ff35399381cb229326b961798ce4f4cc60ddfdb",
   "dependencies": {
     "@js-temporal/polyfill": "^0.4.4",
-    "@sqlite.org/sqlite-wasm": "3.46.1-build1",
+    "@sqlite.org/sqlite-wasm": "^3.46.1-build3",
     "date-fns": "^3.6.0",
     "vite-plugin-tauri": "^3.3.0",
     "vosk": "^0.3.39"

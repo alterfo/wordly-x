@@ -1,7 +1,6 @@
-
-import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
-import path from "node:path";
-import {format, getDay, lastDayOfMonth} from "date-fns";
+import sqlite3InitModule from "./sqlite-wasm/sqlite3.mjs";
+import {format, getDay, lastDayOfMonth} from "../../node_modules/date-fns/index.mjs";
+import {getYyyymmdd} from "../main.mjs";
 
 function getWordCount(text) { // оптимизировано и идемпотентно
     const wordsArr = text.trim().split(/[\s,.;]+/);
@@ -22,40 +21,39 @@ export class DB {
                     'opfs' in sqlite3Static
                         ? new sqlite3Static.oo1.OpfsDb('/mydb.sqlite3')
                         : new sqlite3Static.oo1.DB('/mydb.sqlite3', 'ct');
+
+                // this.getDatabaseFile('/mydb.sqlite3').then(databaseFile => {
+                //     const fileUrl = URL.createObjectURL(databaseFile);
+                //
+                //     const a = document.createElement('a');
+                //     a.href = fileUrl;
+                //     a.download = 'database.sqlite3';
+                //     a.click();
+                //     a.remove();
+                //
+                //     URL.revokeObjectURL(fileUrl);
+                // })
             });
-
-
-        this.getDatabaseFile('/mydb.sqlite3').then(databaseFile => {
-            const fileUrl = URL.createObjectURL(databaseFile);
-
-            const a = document.createElement('a');
-            a.href = fileUrl;
-            a.download = 'database.sqlite3';
-            a.click();
-            a.remove();
-
-            URL.revokeObjectURL(fileUrl);
-        })
     }
 
-    async getDatabaseFile(fileName) {
-        const tempFileName = `backup-${ Date.now() }--${ fileName }`;
-        await this.db.sql`VACUUM INTO ${ path.join('/') }/${ tempFileName }`;
-
-        let dirHandle = await navigator.storage.getDirectory();
-        for (let dirName of path)
-            dirHandle = await dirHandle.getDirectoryHandle(dirName);
-
-
-        const fileHandle = await dirHandle.getFileHandle(tempFileName);
-        const file = await fileHandle.getFile();
-        const fileBuffer = await file.arrayBuffer();
-        await dirHandle.removeEntry(tempFileName);
-
-        return new File([fileBuffer], fileName, {
-            type: 'application/x-sqlite3',
-        });
-    }
+    // async getDatabaseFile(fileName) {
+    //     const tempFileName = `backup-${ Date.now() }--${ fileName }`;
+    //     await this.db.sql`VACUUM INTO ${ path.join('/') }/${ tempFileName }`;
+    //
+    //     let dirHandle = await navigator.storage.getDirectory();
+    //     for (let dirName of path)
+    //         dirHandle = await dirHandle.getDirectoryHandle(dirName);
+    //
+    //
+    //     const fileHandle = await dirHandle.getFileHandle(tempFileName);
+    //     const file = await fileHandle.getFile();
+    //     const fileBuffer = await file.arrayBuffer();
+    //     await dirHandle.removeEntry(tempFileName);
+    //
+    //     return new File([fileBuffer], fileName, {
+    //         type: 'application/x-sqlite3',
+    //     });
+    // }
 
     init() {
         this.db.exec({
@@ -82,8 +80,8 @@ export class DB {
             sql: `
             INSERT INTO diaries (uuid, text, date, word_count) VALUES (
                 ${crypto.randomUUID()},
-                ${""},
-                ${format(new Date(), "yyyy-MM-dd")},
+                "",
+                ${getYyyymmdd()},
                 ${0}
             )
             ON CONFLICT(date) DO NOTHING;
@@ -92,14 +90,14 @@ export class DB {
 
         return this.db.exec({
             sql: `
-                SELECT diary FROM diaries WHERE date = ${format(new Date(), "yyyy-MM-dd")}
+                SELECT diary FROM diaries WHERE date = ${getYyyymmdd()}
             `
         })
     }
 
-    async viewText(date) {
-        return await this.db.exec({sql: `SELECT * FROM diaries WHERE date = ${(new Date(date)).toISOString().substring(0, 10)}`})
-    }
+    // async viewText(date) {
+    //     return await this.db.exec({sql: `SELECT * FROM diaries WHERE date = ${(new Date(date)).toISOString().substring(0, 10)}`})
+    // }
 
     async timeline(yyyymm) {
         const timeline = []
@@ -148,12 +146,12 @@ export class DB {
     }
 
     async updateText(text) {
-        await this.db.exec({sql: `UPDATE diaries SET text = ${text}, word_count = ${getWordCount(text)} WHERE date = ${format(new Date(), "yyyy-MM-dd")}`})
+        await this.db.exec({sql: `UPDATE diaries SET text = ${text}, word_count = ${getWordCount(text)} WHERE date = ${getYyyymmdd()}`})
     }
 
-    async insertAudio(todayUUID, audioFileName) {
-        await this.db.exec({sql: `INSERT INTO audios (uuid, audio, diary) VALUES (${crypto.randomUUID()}, ${audioFileName}, ${todayUUID})`})
-    }
+    // async insertAudio(todayUUID, audioFileName) {
+    //     await this.db.exec({sql: `INSERT INTO audios (uuid, audio, diary) VALUES (${crypto.randomUUID()}, ${audioFileName}, ${todayUUID})`})
+    // }
 
     async getAudiosByDate(todayUUID) {
         return await this.db.exec({sql: `SELECT * FROM audios WHERE diary = ${todayUUID}`})

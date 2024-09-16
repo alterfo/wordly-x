@@ -9,10 +9,58 @@
     <meta http-equiv="Permissions-Policy" content="microphone=(self)" />
 
     <title>Wordly-X</title>
+
+    <script type="module">
+        import {default as sqlite3InitModule} from "./storage/sqlite-wasm/sqlite3.mjs";
+        sqlite3InitModule().then((sqlite3)=>{
+            console.log("Loaded sqlite3",sqlite3.version);
+        });
+    </script>
+
+
     <script type="module" src="main.mjs" defer></script>
   </head>
   <body class="grid grid-cols-1 mx-4">
       <h1 class="text-white">Wordly-X</h1>
       <div id="app"></div>
+
+      <template id="month">
+        <div class="grid grid-cols-3 text-blue-50 align-middle justify-center items-center h-20">
+          <button><<</button>
+
+          <h2 class="text-3xl font-bold text-blue-50 text-center">${session.monthString}</h2>
+
+          <button
+                  hidden="${session.yyyymm === getYyyymm()}"
+          >
+            >>
+          </button>
+        </div>
+      </template>
+
+      <template id="timeline">
+        <div class="grid grid-cols-[repeat(auto-fill,_minmax(1.7em,_1fr))] grid-rows-[50px] gap-2">
+
+        </div>
+      </template>
+
+      <template id="timeline__day">
+        <div class="my-0.5 mx-0.1 cursor-pointer flex flex-col max-w-[50px]">
+          <span data-day class="block text-xs text-blue-50 text-center">${day + 1}</span>
+          <button class='block font-normal text-center py-1' id='${day + 1}'>
+                    <span class='${"block " + (
+            word_count === - 1 || word_count === 0 ? "bg-zinc-300"
+                : word_count > 0 && word_count < 500 ? "bg-yellow-300"
+                    : word_count > 500 ? "bg-red-300"
+                        : ""
+        ) + (
+            is_today ? " border-4 border-b-blue-50" : ""
+        ) }'
+                    >
+                        ${word_count === -1 ? "—" : word_count}
+                    </span>
+          </button>
+        </div>
+      </template>
   </body>
 </html>

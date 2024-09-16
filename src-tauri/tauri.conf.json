@@ -1,34 +1,19 @@
 {
   "$schema": "node_modules/@tauri-apps/cli/schema.json",
-  "build": {
-    "devPath": "../src",
-    "distDir": "../src",
-    "withGlobalTauri": true
-  },
+
   "package": {
     "productName": "wordly-x",
     "version": "0.4.0"
   },
+
   "tauri": {
-    "systemTray": null,
     "allowlist": {
-      "all": false
+      "all": true
     },
     "bundle": {
       "active": true,
-      "category": "DeveloperTool",
+      "category": "Productivity",
       "copyright": "",
-      "deb": {
-        "depends": []
-      },
-      "externalBin": [],
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
       "identifier": "com.wordly-x.dev",
       "longDescription": "",
       "macOS": {
@@ -38,29 +23,30 @@
         "providerShortName": null,
         "signingIdentity": null
       },
-      "resources": [],
-      "shortDescription": "",
-      "targets": "all",
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": ""
-      }
-    },
-    "security": {
-      "csp": null
-    },
-    "updater": {
-      "active": false
+      "targets": "dmg"
     },
     "windows": [
       {
+        "alwaysOnTop": false,
+        "titleBarStyle": "Overlay",
+        "contentProtected": true,
         "fullscreen": false,
         "height": 600,
         "resizable": true,
         "title": "wordly-x",
-        "width": 800
+        "width": 400,
+        "focus": true,
+        "decorations": false,
+        "hiddenTitle": true
       }
     ]
+  },
+
+  "build": {
+    "devPath": "../src",
+    "distDir": "../src",
+    "beforeBuildCommand": "npx tailwindcss -i ./src/style.css -o ./src/output.css",
+    "beforeDevCommand": "npx tailwindcss -i ./src/style.css -o ./src/output.css --watch",
+    "withGlobalTauri": true
   }
 }
