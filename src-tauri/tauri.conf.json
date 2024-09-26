@@ -32,11 +32,15 @@
       "identifier": "com.wordly-x.dev",
       "longDescription": "",
       "macOS": {
-        "entitlements": null,
+        "entitlements": "build/entitlements.mac.plist",
         "exceptionDomain": "",
         "frameworks": [],
         "providerShortName": null,
-        "signingIdentity": null
+        "signingIdentity": null,
+        "extendInfo": {
+          "NSMicrophoneUsageDescription": "Wordly-X requires microphone access to record audio.",
+          "com.apple.security.device.audio-input": true,
+        }
       },
       "resources": [],
       "shortDescription": "",

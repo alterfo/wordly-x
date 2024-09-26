@@ -43,6 +43,7 @@ async function createWindow() {
     shell.openExternal(`x-apple.systempreferences:com.apple.preference.security?Privacy_microphone`);
   }
 
+  // @ts-ignore
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     details.responseHeaders!['Cross-Origin-Opener-Policy'] = ['same-origin'];
     details.responseHeaders!['Cross-Origin-Embedder-Policy'] = ['require-corp'];
